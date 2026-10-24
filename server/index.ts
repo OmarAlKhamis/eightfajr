@@ -10,6 +10,23 @@ import { registerRoutes } from "./routes";
 
 const app = new Hono<AppEnv>();
 
+// Canonical host: APP_ORIGIN (https://eightfajr.com in production). Anything
+// else that reaches this Worker (www, the workers.dev URL) is redirected there.
+// Local dev sets APP_ORIGIN to the dev server, so nothing redirects locally.
+app.use("*", async (c, next) => {
+  const origin = c.env.APP_ORIGIN;
+  if (origin) {
+    const canonical = new URL(origin);
+    const url = new URL(c.req.url);
+    if (url.host !== canonical.host) {
+      url.protocol = canonical.protocol;
+      url.host = canonical.host;
+      return c.redirect(url.toString(), 301);
+    }
+  }
+  await next();
+});
+
 app.use("/api/*", withStorage);
 
 app.use("/api/*", async (c, next) => {
@@ -25,6 +42,12 @@ app.onError((err, c) => {
 app.notFound((c) => c.json({ error: "not_found" }, 404));
 
 registerRoutes(app);
+
+// Everything that is not an API route is a static asset or the SPA shell.
+app.get("*", (c) => {
+  if (c.req.path.startsWith("/api/")) return c.json({ error: "not_found" }, 404);
+  return c.env.ASSETS.fetch(c.req.raw as unknown as Parameters<typeof c.env.ASSETS.fetch>[0]) as unknown as Promise<Response>;
+});
 
 export default {
   fetch: app.fetch,

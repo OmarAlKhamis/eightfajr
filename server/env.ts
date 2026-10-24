@@ -1,9 +1,10 @@
-import type { D1Database } from "@cloudflare/workers-types";
+import type { D1Database, Fetcher } from "@cloudflare/workers-types";
 import type { User } from "@shared/schema";
 import type { Storage } from "./storage";
 
 export interface Env {
   DB: D1Database;
+  ASSETS: Fetcher;
   APP_NAME?: string;
   APP_ORIGIN?: string;
 

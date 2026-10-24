@@ -32,7 +32,7 @@ const SOURCES = {
 async function download(url, dest) {
   if (offline && existsSync(dest)) return;
   process.stdout.write(`↓ ${url}\n`);
-  const res = await fetch(url, { headers: { "user-agent": "fajr-eight-build/1.0" } });
+  const res = await fetch(url, { headers: { "user-agent": "eightfajr-build/1.0" } });
   if (!res.ok || !res.body) throw new Error(`download failed: ${res.status} ${url}`);
   await pipeline(Readable.fromWeb(res.body), createWriteStream(dest));
 }

@@ -107,7 +107,7 @@ export function Layout({ children, wide = false }: { children: ReactNode; wide?:
             <Link href="/privacy" className="hover:underline">
               {t.nav.privacy}
             </Link>
-            <a href="https://github.com/OmarAlKhamis/fajr-eight" className="hover:underline" rel="noopener" target="_blank">
+            <a href="https://github.com/OmarAlKhamis/eightfajr" className="hover:underline" rel="noopener" target="_blank">
               GitHub
             </a>
           </span>

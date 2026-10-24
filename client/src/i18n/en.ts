@@ -1,5 +1,5 @@
 export const en = {
-  app: { name: "Fajr Alarm for Eight Sleep", short: "Fajr Alarm", tagline: "Your Pod wakes you at Fajr. Every day. Automatically." },
+  app: { name: "Eight Fajr", short: "Eight Fajr", tagline: "Your Pod wakes you at Fajr. Every day. Automatically." },
   nav: { home: "Home", settings: "My alarm", connect: "Connect", signin: "Sign in", signout: "Sign out", privacy: "Privacy", admin: "Admin", language: "العربية", theme: "Theme" },
   common: {
     loading: "Loading…",
@@ -144,9 +144,13 @@ export const en = {
     vibration: "Vibration",
     vibrationPower: "Strength",
     power: { 20: "Low", 50: "Medium", 100: "High" },
+    vibrationPattern: "Pattern",
+    patterns: { RISE: "Gradual", INTENSE: "Intense" },
     thermal: "Temperature change",
     thermalLevel: "Level",
     thermalHint: "Negative cools, positive warms. 0 keeps the current temperature.",
+    smartWake: "Smart alarm",
+    smartWakeHint: "Eight Sleep may wake you up to 30 minutes early when it detects light sleep. Off by default so the alarm rings exactly at the time shown.",
     previewTitle: "Next 7 alarms",
     previewFajr: "Fajr",
     previewAlarm: "Alarm",

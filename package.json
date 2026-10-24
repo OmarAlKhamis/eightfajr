@@ -1,7 +1,7 @@
 {
-  "name": "fajr-eight",
+  "name": "eightfajr",
   "version": "0.1.0",
-  "description": "Keeps one Eight Sleep Pod alarm synced to Fajr time in your city, every day.",
+  "description": "Eight Fajr: keeps one Eight Sleep Pod alarm synced to Fajr time in your city, every day.",
   "private": true,
   "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "deploy": "npm run build && wrangler deploy -c dist/fajr_eight/wrangler.json",
+    "deploy": "npm run build && wrangler deploy -c dist/eightfajr/wrangler.json",
     "check": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -17,8 +17,8 @@
     "cities:build": "node script/build-cities.mjs",
     "eight:probe": "node script/eight-probe.mjs",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "wrangler d1 migrations apply fajr-eight --local",
-    "db:migrate:prod": "wrangler d1 migrations apply fajr-eight --remote",
+    "db:migrate": "wrangler d1 migrations apply eightfajr --local",
+    "db:migrate:prod": "wrangler d1 migrations apply eightfajr --remote",
     "cf-typegen": "wrangler types"
   },
   "dependencies": {

@@ -1,10 +1,10 @@
 {
-  "client_id": "https://fajr-eight.omar-ab-kh.workers.dev/oauth-client.json",
-  "client_name": "Fajr Alarm for Eight Sleep",
-  "client_uri": "https://fajr-eight.omar-ab-kh.workers.dev",
-  "logo_uri": "https://fajr-eight.omar-ab-kh.workers.dev/favicon.svg",
+  "client_id": "https://eightfajr.com/oauth-client.json",
+  "client_name": "Eight Fajr",
+  "client_uri": "https://eightfajr.com",
+  "logo_uri": "https://eightfajr.com/favicon.svg",
   "redirect_uris": [
-    "https://fajr-eight.omar-ab-kh.workers.dev/api/connect/callback",
+    "https://eightfajr.com/api/connect/callback",
     "http://localhost:5173/api/connect/callback"
   ],
   "grant_types": ["authorization_code", "refresh_token"],

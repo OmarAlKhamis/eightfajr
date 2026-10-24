@@ -20,8 +20,10 @@ const settingsSchema = z.object({
   offsetMinutes: z.number().int().min(OFFSET_MIN).max(OFFSET_MAX),
   vibrationEnabled: z.boolean().default(true),
   vibrationPower: z.union([z.literal(20), z.literal(50), z.literal(100)]).default(50),
+  vibrationPattern: z.enum(["RISE", "INTENSE"]).default("RISE"),
   thermalEnabled: z.boolean().default(true),
   thermalLevel: z.number().int().min(-100).max(100).default(0),
+  smartWake: z.boolean().default(false),
 });
 
 const previewSchema = z.object({

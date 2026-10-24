@@ -56,8 +56,10 @@ function baseSettings(over: Partial<AlarmSettings> = {}): AlarmSettings {
     offsetMinutes: -10,
     vibrationEnabled: true,
     vibrationPower: 50,
+    vibrationPattern: "RISE",
     thermalEnabled: true,
     thermalLevel: 0,
+    smartWake: false,
     paused: false,
     updatedAt: "2026-10-01T00:00:00.000Z",
     ...over,
@@ -111,7 +113,7 @@ describe("syncUser — the one-alarm invariant", () => {
     expect(out.scheduledLocal).toBe("04:27:00");
     const alarms = [...mock.alarms.values()][0]!;
     expect(alarms).toHaveLength(1);
-    expect(alarms[0]).toMatchObject({ time: "04:27:00", enabled: true, vibration: { powerLevel: 50 }, thermal: { level: 0 } });
+    expect(alarms[0]).toMatchObject({ time: "04:27:00", enabled: true, vibration: { powerLevel: 50, pattern: "RISE" }, thermal: { level: 0 }, smart: { lightSleepEnabled: false } });
     expect(store.managed.get(USER)?.eightAlarmId).toBe(alarms[0]!.id);
     expect(store.log.at(-1)).toMatchObject({ result: "created", trigger: "cron" });
   });

@@ -64,8 +64,11 @@ export const alarmSettings = sqliteTable("alarm_settings", {
   offsetMinutes: integer("offset_minutes").notNull().default(0), // -60..60, negative = before Fajr
   vibrationEnabled: integer("vibration_enabled", { mode: "boolean" }).notNull().default(true),
   vibrationPower: integer("vibration_power").notNull().default(50), // 20 | 50 | 100
+  vibrationPattern: text("vibration_pattern").notNull().default("RISE"), // RISE (gradual) | INTENSE
   thermalEnabled: integer("thermal_enabled", { mode: "boolean" }).notNull().default(true),
   thermalLevel: integer("thermal_level").notNull().default(0), // -100..100
+  // Eight Sleep "smart" alarm: may ring up to 30 min early during light sleep. Off by default.
+  smartWake: integer("smart_wake", { mode: "boolean" }).notNull().default(false),
   paused: integer("paused", { mode: "boolean" }).notNull().default(false),
   updatedAt: text("updated_at").notNull(),
 });

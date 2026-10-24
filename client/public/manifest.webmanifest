@@ -1,6 +1,6 @@
 {
-  "name": "Fajr Alarm for Eight Sleep",
-  "short_name": "Fajr Alarm",
+  "name": "Eight Fajr",
+  "short_name": "Eight Fajr",
   "start_url": "/settings",
   "display": "standalone",
   "background_color": "#faf8f3",

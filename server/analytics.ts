@@ -28,7 +28,7 @@ export async function capture(
         api_key: env.POSTHOG_KEY,
         event,
         distinct_id: await distinctId(env, userId),
-        properties: { ...properties, $lib: "fajr-eight-worker", $process_person_profile: false },
+        properties: { ...properties, $lib: "eightfajr-worker", $process_person_profile: false },
         timestamp: new Date().toISOString(),
       }),
       signal: controller.signal,

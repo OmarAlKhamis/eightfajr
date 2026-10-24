@@ -26,7 +26,7 @@ export default defineConfig({
   root: path.resolve(import.meta.dirname, "client"),
   publicDir: path.resolve(import.meta.dirname, "client", "public"),
   // The cloudflare plugin appends one folder per environment:
-  // dist/client (static assets) and dist/fajr_eight (the Worker).
+  // dist/client (static assets) and dist/eightfajr (the Worker).
   build: {
     outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,

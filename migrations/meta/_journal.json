@@ -15,6 +15,13 @@
       "when": 1792863770198,
       "tag": "0001_refresh_token",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792867429790,
+      "tag": "0002_alarm_options",
+      "breakpoints": true
     }
   ]
 }

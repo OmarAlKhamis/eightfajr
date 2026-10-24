@@ -1,6 +1,6 @@
-# Fajr Alarm for Eight Sleep · منبّه الفجر
+# Eight Fajr · منبّه الفجر
 
-Keeps **one** alarm on your Eight Sleep Pod synced to Fajr time in your city, every day, automatically.
+Eight Fajr keeps **one** alarm on your Eight Sleep Pod synced to Fajr time in your city, every day, automatically.
 Free, bilingual (Arabic default / English), mobile-first. Not affiliated with Eight Sleep.
 
 > Eight Sleep has no public API. This project mirrors the private endpoints documented by the
@@ -92,7 +92,7 @@ Worker variables (dashboard secrets in production, `.dev.vars` locally; see `.de
 
 1. Create the production database and paste its id into `wrangler.jsonc`:
    ```bash
-   npx wrangler d1 create fajr-eight
+   npx wrangler d1 create eightfajr
    ```
 2. Apply migrations: `npm run db:migrate:prod`.
 3. Generate secrets locally (never commit them):
@@ -102,7 +102,7 @@ Worker variables (dashboard secrets in production, `.dev.vars` locally; see `.de
    node -e "console.log('CRON_SECRET='+require('crypto').randomBytes(24).toString('hex'))"
    ```
 4. In the Cloudflare dashboard: Workers & Pages → Create → connect this GitHub repo (Workers Builds).
-   Build command `npm run build`, deploy command `npx wrangler deploy -c dist/fajr_eight/wrangler.json`.
+   Build command `npm run build`, deploy command `npx wrangler deploy -c dist/eightfajr/wrangler.json`.
    Add the variables above under Settings → Variables and Secrets.
 5. Every push to `main` builds and deploys. The cron trigger (`0 * * * *`) is created from `wrangler.jsonc`.
    Manual deploy: `npm run deploy`.

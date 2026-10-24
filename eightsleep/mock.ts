@@ -161,8 +161,9 @@ export class MockEightSleep implements EightSleepApi {
       enabled: input.enabled,
       time: input.time,
       repeat: { enabled: false, weekDays: {} },
-      vibration: { enabled: input.vibrationEnabled, powerLevel: input.vibrationPower, pattern: "RISE" },
+      vibration: { enabled: input.vibrationEnabled, powerLevel: input.vibrationPower, pattern: input.vibrationPattern },
       thermal: { enabled: input.thermalEnabled, level: input.thermalLevel },
+      smart: { lightSleepEnabled: input.smartWake, sleepCapEnabled: false, sleepCapMinutes: 0 },
       snoozing: false,
       nextTimestamp: new Date(this.now() + 3_600_000).toISOString(),
     };
@@ -187,11 +188,16 @@ export class MockEightSleep implements EightSleepApi {
         ...(cur.vibration ?? { pattern: "RISE", enabled: true }),
         enabled: patch.vibrationEnabled ?? cur.vibration?.enabled ?? true,
         powerLevel: patch.vibrationPower ?? cur.vibration?.powerLevel ?? 50,
+        pattern: patch.vibrationPattern ?? cur.vibration?.pattern ?? "RISE",
       },
       thermal: {
         ...(cur.thermal ?? { enabled: true }),
         enabled: patch.thermalEnabled ?? cur.thermal?.enabled ?? true,
         level: patch.thermalLevel ?? cur.thermal?.level ?? 0,
+      },
+      smart: {
+        ...(cur.smart ?? { sleepCapEnabled: false, sleepCapMinutes: 0 }),
+        lightSleepEnabled: patch.smartWake ?? cur.smart?.lightSleepEnabled ?? false,
       },
     };
     list[idx] = next;

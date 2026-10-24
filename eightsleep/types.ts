@@ -79,13 +79,18 @@ export interface EightAlarm {
   [k: string]: unknown;
 }
 
+export type EightVibrationPatternInput = "RISE" | "INTENSE";
+
 export interface EightAlarmInput {
   time: string; // "HH:MM:SS"
   enabled: boolean;
   vibrationEnabled: boolean;
   vibrationPower: number; // 20 | 50 | 100
+  vibrationPattern: EightVibrationPatternInput; // RISE = gradual
   thermalEnabled: boolean;
   thermalLevel: number; // -100..100
+  /** Eight Sleep "smart" alarm (light-sleep wake, up to 30 min early). */
+  smartWake: boolean;
 }
 
 export interface EightSleepApi {

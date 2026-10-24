@@ -1,4 +1,4 @@
-# CLAUDE.md — agent context for Fajr Alarm for Eight Sleep (منبّه الفجر)
+# CLAUDE.md — agent context for Eight Fajr (منبّه الفجر)
 
 ## What it is
 Free web app that keeps exactly ONE alarm on a user's Eight Sleep Pod synced to Fajr

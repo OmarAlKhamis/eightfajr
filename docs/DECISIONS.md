@@ -62,6 +62,26 @@ Sleep to allowlist our redirect URI (draft in `docs/launch/eightsleep-oauth-requ
 of the app is unchanged because tokens are already refresh-token based.
 **Scope caveat:** the redirect flow offers no `write_sleep`; whether alarms need it is untested.
 
+## 4d. Name and domain: Eight Fajr / eightfajr.com (2026-10-24)
+**Decision:** Product name "Eight Fajr" (Arabic UI keeps the subtitle منبّه الفجر), domain
+eightfajr.com (Cloudflare Registrar), repo `OmarAlKhamis/eightfajr`, Worker `eightfajr`, D1
+`eightfajr`, local folder `eightfajr`. www and the old workers.dev URL 301 to the apex from the Worker
+itself (`APP_ORIGIN` is the canonical origin; assets are served through the `ASSETS` binding so the
+Worker sees every request). Resend sending domain eightfajr.com (eu-west-1), sender
+`no-reply@eightfajr.com` once DNS is verified.
+**Why:** Omar bought the domain and wants one name everywhere; a verified domain also fixes
+deliverability (Resend's shared test sender landed in Gmail spam).
+**Caveat:** "Eight" is Eight Sleep's brand. The FAQ and footer state we are not affiliated; if Eight
+Sleep objects, the name can change without touching the code (strings + domain only).
+**Cleanup:** the first Worker/D1 pair `fajr-eight` is superseded; its one user + connection row were
+copied into the new D1, then the old pair can be deleted.
+
+## 4e. Alarm options: vibration pattern and smart alarm (2026-10-24)
+**Decision:** Expose Eight Sleep's vibration `pattern` (RISE = gradual, INTENSE) and the "smart"
+light-sleep wake (`smart.lightSleepEnabled`) as settings. Defaults: RISE, smart off.
+**Why:** Omar asked for both after seeing the Eight Sleep app's options. Smart stays off by default
+because it can ring up to 30 minutes before the computed Fajr time.
+
 ## 5. Alarm time zone: compute in city tz, push in account tz (2026-10-24)
 **Decision:** Fajr instant is computed for the chosen city's IANA zone; the alarm `time` string sent
 to Eight Sleep is that instant formatted in the Eight Sleep account's `timezone` (from `/users/me`).

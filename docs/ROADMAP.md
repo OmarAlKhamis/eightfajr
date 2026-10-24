@@ -9,5 +9,5 @@
 - Arabic city names (override list for MENA cities; GeoNames main file is Latin-only)
 - Optional second alarm (e.g. last third of the night via adhan SunnahTimes)
 - Web Push nightly confirmation "alarm set for 04:52" (VAPID pattern from Ramadan Challenge)
-- Custom domain + hello@ mailbox (Cloudflare Email Routing), Resend verified sender
+- hello@eightfajr.com mailbox (Cloudflare Email Routing); domain + Resend sender done 2026-10-24
 - Document self-hosting this Worker for Home Assistant / eightctl users

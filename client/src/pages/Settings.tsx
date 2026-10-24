@@ -26,8 +26,10 @@ function settingsToForm(s: NonNullable<Me["settings"]>): Form {
     offsetMinutes: s.offsetMinutes,
     vibrationEnabled: s.vibrationEnabled,
     vibrationPower: s.vibrationPower,
+    vibrationPattern: s.vibrationPattern ?? "RISE",
     thermalEnabled: s.thermalEnabled,
     thermalLevel: s.thermalLevel,
+    smartWake: s.smartWake ?? false,
   };
 }
 
@@ -71,7 +73,16 @@ function SettingsInner({ me, first, t, fmt, locale }: { me: Me; first: boolean; 
   const onCity = (c: City) => {
     setCity(c);
     setForm((f) => ({
-      ...(f ?? { offsetMinutes: 0, vibrationEnabled: true, vibrationPower: 50 as const, thermalEnabled: true, thermalLevel: 0, method: "MuslimWorldLeague" as MethodKey }),
+      ...(f ?? {
+        offsetMinutes: 0,
+        vibrationEnabled: true,
+        vibrationPower: 50 as const,
+        vibrationPattern: "RISE" as const,
+        thermalEnabled: true,
+        thermalLevel: 0,
+        smartWake: false,
+        method: "MuslimWorldLeague" as MethodKey,
+      }),
       cityName: c.name,
       countryCode: c.countryCode,
       admin1: c.admin1 || null,
@@ -256,18 +267,34 @@ function SettingsInner({ me, first, t, fmt, locale }: { me: Me; first: boolean; 
                     <div className="space-y-3">
                       <Toggle id="vib" checked={form.vibrationEnabled} onChange={(v) => setForm({ ...form, vibrationEnabled: v })} label={<strong>{t.settings.vibration}</strong>} />
                       {form.vibrationEnabled && (
-                        <div className="flex gap-2">
-                          {([20, 50, 100] as const).map((p) => (
-                            <button
-                              key={p}
-                              type="button"
-                              onClick={() => setForm({ ...form, vibrationPower: p })}
-                              className={`flex-1 h-10 rounded-xl border text-sm font-semibold ${form.vibrationPower === p ? "bg-primary border-transparent" : "border-line bg-app"}`}
-                            >
-                              {t.settings.power[p]}
-                            </button>
-                          ))}
-                        </div>
+                        <>
+                          <div className="text-xs text-muted">{t.settings.vibrationPower}</div>
+                          <div className="flex gap-2">
+                            {([20, 50, 100] as const).map((p) => (
+                              <button
+                                key={p}
+                                type="button"
+                                onClick={() => setForm({ ...form, vibrationPower: p })}
+                                className={`flex-1 h-10 rounded-xl border text-sm font-semibold ${form.vibrationPower === p ? "bg-primary border-transparent" : "border-line bg-app"}`}
+                              >
+                                {t.settings.power[p]}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="text-xs text-muted">{t.settings.vibrationPattern}</div>
+                          <div className="flex gap-2">
+                            {(["RISE", "INTENSE"] as const).map((p) => (
+                              <button
+                                key={p}
+                                type="button"
+                                onClick={() => setForm({ ...form, vibrationPattern: p })}
+                                className={`flex-1 h-10 rounded-xl border text-sm font-semibold ${form.vibrationPattern === p ? "bg-primary border-transparent" : "border-line bg-app"}`}
+                              >
+                                {t.settings.patterns[p]}
+                              </button>
+                            ))}
+                          </div>
+                        </>
                       )}
                     </div>
                     <div className="space-y-3">
@@ -283,6 +310,11 @@ function SettingsInner({ me, first, t, fmt, locale }: { me: Me; first: boolean; 
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Toggle id="smart" checked={form.smartWake} onChange={(v) => setForm({ ...form, smartWake: v })} label={<strong>{t.settings.smartWake}</strong>} />
+                    <p className="text-xs text-muted leading-relaxed">{t.settings.smartWakeHint}</p>
                   </div>
 
                   <Button type="submit" className="w-full" size="lg" loading={save.isPending} disabled={!dirty && !!me.settings}>

@@ -125,17 +125,19 @@ describe("createEightSleepClient", () => {
       enabled: true,
       vibrationEnabled: true,
       vibrationPower: 50,
+      vibrationPattern: "INTENSE",
       thermalEnabled: true,
       thermalLevel: 0,
+      smartWake: true,
     });
     expect(calls[1]!.url).toBe(`${APP_API_URL}/v1/users/u1/alarms`);
     expect(calls[1]!.method).toBe("POST");
     expect(calls[1]!.body).toEqual({
       time: "04:37:00",
       enabled: true,
-      vibration: { enabled: true, powerLevel: 50, pattern: "RISE" },
+      vibration: { enabled: true, powerLevel: 50, pattern: "INTENSE" },
       thermal: { enabled: true, level: 0 },
-      smart: { lightSleepEnabled: false, sleepCapEnabled: false },
+      smart: { lightSleepEnabled: true, sleepCapEnabled: false },
     });
     expect(created.id).toBe("a2");
   });
@@ -162,7 +164,7 @@ describe("createEightSleepClient", () => {
       smart: { lightSleepEnabled: false, sleepCapEnabled: false, sleepCapMinutes: 480 },
       someFutureField: "keep-me",
     };
-    const updated = await api.updateAlarm(session, existing, { time: "04:37:00", enabled: true, vibrationPower: 100 });
+    const updated = await api.updateAlarm(session, existing, { time: "04:37:00", enabled: true, vibrationPower: 100, vibrationPattern: "INTENSE", smartWake: true });
     expect(calls[0]!.method).toBe("PUT");
     expect(calls[0]!.url).toBe(`${APP_API_URL}/v1/users/u1/alarms/a1`);
     const body = calls[0]!.body as Record<string, unknown>;
@@ -173,9 +175,9 @@ describe("createEightSleepClient", () => {
       enabled: true,
       skipNext: false,
       audio: { enabled: false, level: 30 },
-      smart: { sleepCapMinutes: 480 },
+      smart: { lightSleepEnabled: true, sleepCapEnabled: false, sleepCapMinutes: 480 },
       someFutureField: "keep-me",
-      vibration: { powerLevel: 100, pattern: "RISE" },
+      vibration: { powerLevel: 100, pattern: "INTENSE" },
     });
     expect(updated.time).toBe("04:37:00");
   });
@@ -280,7 +282,7 @@ describe("MockEightSleep", () => {
     const mock = new MockEightSleep();
     const s = await mock.login("demo@example.com", "demo-password");
     expect((await mock.getMe(s)).timezone).toBe("Asia/Riyadh");
-    const a = await mock.createAlarm(s, { time: "04:30:00", enabled: true, vibrationEnabled: true, vibrationPower: 50, thermalEnabled: true, thermalLevel: 0 });
+    const a = await mock.createAlarm(s, { time: "04:30:00", enabled: true, vibrationEnabled: true, vibrationPower: 50, vibrationPattern: "RISE", thermalEnabled: true, thermalLevel: 0, smartWake: false });
     expect((await mock.listAlarms(s)).map((x) => x.id)).toEqual([a.id]);
     const u = await mock.updateAlarm(s, a, { time: "04:31:00" });
     expect(u.time).toBe("04:31:00");

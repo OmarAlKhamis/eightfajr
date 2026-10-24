@@ -17,7 +17,7 @@ export function Privacy() {
           </section>
         ))}
         <p className="text-xs text-muted" dir="ltr">
-          Contact: omar.ab.kh@gmail.com · Source: github.com/OmarAlKhamis/fajr-eight
+          Contact: hello@eightfajr.com · Source: github.com/OmarAlKhamis/eightfajr
         </p>
       </article>
     </Layout>

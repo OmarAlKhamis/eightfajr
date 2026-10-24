@@ -1,23 +1,32 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "fajr-eight",
+  "name": "eightfajr",
   "main": "server/index.ts",
   "compatibility_date": "2025-06-01",
   "compatibility_flags": ["nodejs_compat"],
 
-  // Static client build. API routes always reach the Worker; everything else
-  // is served as a single-page app.
+  // eightfajr.com is the canonical host; www and the workers.dev URL redirect to it
+  // (server/index.ts). Custom domains get their DNS + certificates from wrangler.
+  "routes": [
+    { "pattern": "eightfajr.com", "custom_domain": true },
+    { "pattern": "www.eightfajr.com", "custom_domain": true }
+  ],
+
+  // Static client build. The Worker runs first for every request (so it can
+  // redirect to the canonical host), then hands non-API paths to the assets
+  // binding, which serves the single-page app.
   "assets": {
+    "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": true
   },
 
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "fajr-eight",
-      // Production D1 (created 2026-10-24, EEUR). Local dev ignores this id.
-      "database_id": "30b6ee83-dc21-4ade-b008-cb933180961a",
+      "database_name": "eightfajr",
+      // Production D1 "eightfajr" (created 2026-10-24, EEUR). Local dev ignores this id.
+      "database_id": "51698930-61b8-4235-8c16-36eac8e769ed",
       "migrations_dir": "migrations"
     }
   ],
@@ -31,8 +40,8 @@
   // Secrets are NOT here: local dev reads .dev.vars (copy .dev.vars.example);
   // production reads dashboard secrets (Workers → Settings → Variables).
   "vars": {
-    "APP_NAME": "Fajr Alarm for Eight Sleep",
-    "APP_ORIGIN": "https://fajr-eight.omar-ab-kh.workers.dev",
+    "APP_NAME": "Eight Fajr",
+    "APP_ORIGIN": "https://eightfajr.com",
     "ADMIN_EMAIL": "omar.ab.kh@gmail.com",
     "EIGHT_CLIENT_ID": "0894c7f33bb94800a03f1f4df13a4f38",
     "EIGHT_MOCK": "0",

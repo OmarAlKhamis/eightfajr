@@ -184,11 +184,11 @@ export function createEightSleepClient(opts: ClientOptions): EightSleepApi {
       const body = {
         time: input.time,
         enabled: input.enabled,
-        vibration: { enabled: input.vibrationEnabled, powerLevel: input.vibrationPower, pattern: "RISE" },
+        vibration: { enabled: input.vibrationEnabled, powerLevel: input.vibrationPower, pattern: input.vibrationPattern },
         thermal: { enabled: input.thermalEnabled, level: input.thermalLevel },
-        // Eight Sleep's default "smart" alarm may ring up to 30 min early during light
-        // sleep. A Fajr alarm must ring at the time we computed, so it is off for ours.
-        smart: { lightSleepEnabled: false, sleepCapEnabled: false },
+        // Eight Sleep's "smart" alarm may ring up to 30 min early during light sleep.
+        // Off unless the user opts in, so Fajr rings at the computed time.
+        smart: { lightSleepEnabled: input.smartWake, sleepCapEnabled: false },
       };
       const j = (await authed(session, "POST", `${APP_API_URL}/v1/users/${session.userId}/alarms`, body)) as Json | null;
       const created = unwrapAlarm(j);
@@ -212,6 +212,7 @@ export function createEightSleepClient(opts: ClientOptions): EightSleepApi {
         if ("level" in vib && !("powerLevel" in vib)) vib.level = patch.vibrationPower;
         else vib.powerLevel = patch.vibrationPower;
       }
+      if (patch.vibrationPattern !== undefined) vib.pattern = patch.vibrationPattern;
       body.vibration = vib;
       const th = { ...((existing.thermal as Json | undefined) ?? {}) };
       if (patch.thermalEnabled !== undefined) th.enabled = patch.thermalEnabled;
@@ -220,6 +221,9 @@ export function createEightSleepClient(opts: ClientOptions): EightSleepApi {
         else th.level = patch.thermalLevel;
       }
       body.thermal = th;
+      if (patch.smartWake !== undefined) {
+        body.smart = { ...((existing.smart as Json | undefined) ?? { sleepCapEnabled: false }), lightSleepEnabled: patch.smartWake };
+      }
       const j = (await authed(
         session,
         "PUT",

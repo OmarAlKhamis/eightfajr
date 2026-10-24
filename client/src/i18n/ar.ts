@@ -1,7 +1,7 @@
 import type { Dict } from "./en";
 
 export const ar: Dict = {
-  app: { name: "منبّه الفجر لأسرّة Eight Sleep", short: "منبّه الفجر", tagline: "سريرك يصحّيك على الفجر. كل يوم. تلقائياً." },
+  app: { name: "Eight Fajr · منبّه الفجر لأسرّة Eight Sleep", short: "Eight Fajr", tagline: "سريرك يصحّيك على الفجر. كل يوم. تلقائياً." },
   nav: { home: "الرئيسية", settings: "منبّهي", connect: "الربط", signin: "تسجيل الدخول", signout: "تسجيل الخروج", privacy: "الخصوصية", admin: "الإدارة", language: "English", theme: "المظهر" },
   common: {
     loading: "جارٍ التحميل…",
@@ -145,9 +145,13 @@ export const ar: Dict = {
     vibration: "الاهتزاز",
     vibrationPower: "القوة",
     power: { 20: "خفيف", 50: "متوسط", 100: "قوي" },
+    vibrationPattern: "النمط",
+    patterns: { RISE: "تدريجي", INTENSE: "مباشر" },
     thermal: "تغيير الحرارة",
     thermalLevel: "المستوى",
     thermalHint: "السالب يبرّد والموجب يدفّي. صفر يبقي الحرارة الحالية.",
+    smartWake: "المنبّه الذكي",
+    smartWakeHint: "قد يصحّيك Eight Sleep قبل الوقت بما يصل إلى ٣٠ دقيقة إذا لاحظ نوماً خفيفاً. مطفأ افتراضياً حتى يرن المنبّه على الوقت المعروض بالضبط.",
     previewTitle: "المنبّهات السبعة القادمة",
     previewFajr: "الفجر",
     previewAlarm: "المنبّه",

@@ -51,8 +51,10 @@ function alarmInput(s: AlarmSettings, time: string, enabled: boolean): EightAlar
     enabled,
     vibrationEnabled: s.vibrationEnabled,
     vibrationPower: s.vibrationPower,
+    vibrationPattern: s.vibrationPattern === "INTENSE" ? "INTENSE" : "RISE",
     thermalEnabled: s.thermalEnabled,
     thermalLevel: s.thermalLevel,
+    smartWake: s.smartWake,
   };
 }
 

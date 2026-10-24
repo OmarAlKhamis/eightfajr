@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping keep Fajr alarms working on Eight Sleep Pods.
+Thanks for helping keep Eight Fajr working on Eight Sleep Pods.
 
 ## Ground rules
 - Licence: PolyForm Noncommercial 1.0.0. By contributing you agree your changes are licensed the same way.

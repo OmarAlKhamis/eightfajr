@@ -45,8 +45,10 @@ export interface Settings {
   offsetMinutes: number;
   vibrationEnabled: boolean;
   vibrationPower: 20 | 50 | 100;
+  vibrationPattern: "RISE" | "INTENSE";
   thermalEnabled: boolean;
   thermalLevel: number;
+  smartWake: boolean;
   paused: boolean;
   updatedAt: string;
 }

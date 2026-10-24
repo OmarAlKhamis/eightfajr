@@ -8,7 +8,7 @@ import type { Env } from "./env";
 //   Resend account owner's inbox) — fine for the first real test.
 // - EMAIL_FROM set to a verified-domain address: full delivery.
 
-const TEST_SENDER = "Fajr Alarm <onboarding@resend.dev>";
+const TEST_SENDER = "Eight Fajr <onboarding@resend.dev>";
 let lastDevMagicLink: { email: string; url: string; at: string } | null = null;
 
 export function getLastDevMagicLink() {
@@ -65,19 +65,19 @@ export async function sendMagicLink(env: Env, email: string, url: string, locale
   const copy =
     locale === "ar"
       ? {
-          subject: "رابط الدخول إلى منبّه الفجر",
+          subject: "رابط الدخول إلى Eight Fajr",
           title: "رابط دخولك جاهز",
           body: "اضغط الزر خلال ١٥ دقيقة لتسجيل الدخول. إذا ما طلبت هذا الرابط، تجاهل الرسالة.",
           button: "تسجيل الدخول",
-          footer: "منبّه الفجر لأسرّة Eight Sleep",
+          footer: "Eight Fajr · منبّه الفجر لأسرّة Eight Sleep · eightfajr.com",
           text: `رابط الدخول (صالح ١٥ دقيقة): ${url}`,
         }
       : {
-          subject: "Your sign-in link for Fajr Alarm",
+          subject: "Your sign-in link for Eight Fajr",
           title: "Your sign-in link is ready",
           body: "Tap the button within 15 minutes to sign in. If you didn't request this, just ignore it.",
           button: "Sign in",
-          footer: "Fajr Alarm for Eight Sleep",
+          footer: "Eight Fajr · Fajr alarm for Eight Sleep · eightfajr.com",
           text: `Sign-in link (valid 15 minutes): ${url}`,
         };
   const html = wrap(
@@ -110,18 +110,18 @@ export async function sendNeedsAttention(env: Env, email: string, locale: "ar" |
   const copy =
     locale === "ar"
       ? {
-          subject: "منبّه الفجر يحتاج انتباهك",
+          subject: "Eight Fajr يحتاج انتباهك",
           title: "توقّف تحديث منبّه الفجر",
           body: `${reasonAr} أعد ربط حسابك من الرابط التالي ليرجع المنبّه يتحدّث كل يوم.`,
           button: "إعادة الربط",
-          footer: "منبّه الفجر لأسرّة Eight Sleep",
+          footer: "Eight Fajr · منبّه الفجر لأسرّة Eight Sleep · eightfajr.com",
         }
       : {
-          subject: "Fajr Alarm needs your attention",
+          subject: "Eight Fajr needs your attention",
           title: "Your Fajr alarm stopped updating",
           body: `${reasonEn} Reconnect your account below so the alarm keeps following Fajr every day.`,
           button: "Reconnect",
-          footer: "Fajr Alarm for Eight Sleep",
+          footer: "Eight Fajr · Fajr alarm for Eight Sleep · eightfajr.com",
         };
   const html = wrap(
     locale,
