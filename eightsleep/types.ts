@@ -52,9 +52,15 @@ export interface EightAlarm {
   repeat?: EightAlarmRepeat;
   thermal?: EightAlarmThermal;
   vibration?: EightAlarmVibration;
+  // Seen in live responses (eightctl issue #110, Sept 2026); passed through untouched.
+  audio?: { enabled: boolean; level?: number; [k: string]: unknown };
+  smart?: { lightSleepEnabled?: boolean; sleepCapEnabled?: boolean; sleepCapMinutes?: number; [k: string]: unknown };
+  skipNext?: boolean;
+  tags?: unknown[];
   snoozing?: boolean;
   // Server-computed; must be stripped before PUT.
   snoozedUntil?: string | null;
+  skippedUntil?: string | null;
   nextTimestamp?: string | null;
   startTimestamp?: string | null;
   endTimestamp?: string | null;
@@ -88,6 +94,7 @@ export const SERVER_ONLY_ALARM_FIELDS = [
   "endTimestamp",
   "dismissedUntil",
   "snoozedUntil",
+  "skippedUntil",
 ] as const;
 
 export function isSessionExpired(session: EightSession, nowMs = Date.now(), skewMs = 120_000): boolean {

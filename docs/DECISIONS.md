@@ -31,6 +31,16 @@ reserving commercial use. Strictly this is "source-available", not OSI open sour
 out short-lived, the options are (a) email the user to reconnect when it expires, or (b) store the
 password encrypted with explicit, visible consent. Decide after the real-data pass.
 
+## 4b. Alarm API host and payload (2026-10-24)
+**Decision:** Alarms go through `https://app-api.8slp.net` (`GET /v2/users/{id}/alarms`,
+`POST /v1/users/{id}/alarms`, `PUT /v1/users/{id}/alarms/{alarmId}`) with the object shape
+`{time, enabled, repeat, vibration{enabled,powerLevel,pattern}, thermal{enabled,level}, audio, smart, ...}`.
+**Why:** eightctl issue #110 (2026-09-16) confirms `client-api.8slp.net/v1/users/{id}/alarms` is
+retired (Express 404) and documents the live shape above; pyEight already used it. Unknown fields are
+passed through on PUT and server-computed ones (`*Timestamp`, `*Until`) are stripped.
+**Open:** DELETE and the PUT-vs-PATCH question are not verified against the live API yet; the probe
+script's `--create`/`--delete` flags exist for that.
+
 ## 5. Alarm time zone: compute in city tz, push in account tz (2026-10-24)
 **Decision:** Fajr instant is computed for the chosen city's IANA zone; the alarm `time` string sent
 to Eight Sleep is that instant formatted in the Eight Sleep account's `timezone` (from `/users/me`).

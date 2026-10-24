@@ -109,14 +109,27 @@ describe("createEightSleepClient", () => {
       startTimestamp: "x",
       endTimestamp: "y",
       dismissedUntil: null,
+      skippedUntil: null,
+      skipNext: false,
+      audio: { enabled: false, level: 30 },
+      smart: { lightSleepEnabled: false, sleepCapEnabled: false, sleepCapMinutes: 480 },
       someFutureField: "keep-me",
     };
     const updated = await api.updateAlarm(session, existing, { time: "04:37:00", enabled: true, vibrationPower: 100 });
     expect(calls[0]!.method).toBe("PUT");
     expect(calls[0]!.url).toBe(`${APP_API_URL}/v1/users/u1/alarms/a1`);
     const body = calls[0]!.body as Record<string, unknown>;
-    for (const f of ["nextTimestamp", "startTimestamp", "endTimestamp", "dismissedUntil", "snoozedUntil"]) expect(body).not.toHaveProperty(f);
-    expect(body).toMatchObject({ id: "a1", time: "04:37:00", enabled: true, someFutureField: "keep-me", vibration: { powerLevel: 100, pattern: "RISE" } });
+    for (const f of ["nextTimestamp", "startTimestamp", "endTimestamp", "dismissedUntil", "snoozedUntil", "skippedUntil"]) expect(body).not.toHaveProperty(f);
+    expect(body).toMatchObject({
+      id: "a1",
+      time: "04:37:00",
+      enabled: true,
+      skipNext: false,
+      audio: { enabled: false, level: 30 },
+      smart: { sleepCapMinutes: 480 },
+      someFutureField: "keep-me",
+      vibration: { powerLevel: 100, pattern: "RISE" },
+    });
     expect(updated.time).toBe("04:37:00");
   });
 
