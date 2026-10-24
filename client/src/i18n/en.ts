@@ -69,8 +69,8 @@ export const en = {
   },
   signin: {
     title: "Sign in",
-    body: "Enter your email and we'll send you a one-tap sign-in link. No password.",
-    email: "Email",
+    body: "Enter any email you can read and we'll send you a one-tap sign-in link. No password. This is your account here; you'll connect your Eight Sleep account in the next step.",
+    email: "Your email (any inbox you can open)",
     submit: "Send me a link",
     sent: "Check your inbox",
     sentBody: "We sent a sign-in link to {email}. It works for 15 minutes.",
@@ -81,8 +81,8 @@ export const en = {
   connect: {
     title: "Connect your Eight Sleep account",
     body: "Use the same email and password as the Eight Sleep app. We send them once to Eight Sleep to receive an access token, then forget the password.",
-    email: "Eight Sleep email",
-    password: "Eight Sleep password",
+    email: "Eight Sleep account email (the one you use in the Eight Sleep app)",
+    password: "Eight Sleep account password",
     submit: "Connect",
     connecting: "Connecting…",
     success: "Connected. Now choose your city.",
