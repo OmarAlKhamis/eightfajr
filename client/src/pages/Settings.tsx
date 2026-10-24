@@ -320,6 +320,17 @@ function SettingsInner({ me, first, t, fmt, locale }: { me: Me; first: boolean; 
                   <Button type="submit" className="w-full" size="lg" loading={save.isPending} disabled={!dirty && !!me.settings}>
                     {save.isPending ? t.common.saving : t.common.save}
                   </Button>
+                  {/* Unsaved changes: a sticky bar so Save is never out of sight on long forms. */}
+                  {dirty && (
+                    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-elev/95 backdrop-blur px-4 py-3" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
+                      <div className="mx-auto max-w-2xl flex items-center justify-between gap-3">
+                        <span className="text-sm font-semibold">{t.settings.unsaved}</span>
+                        <Button type="submit" size="md" loading={save.isPending}>
+                          {save.isPending ? t.common.saving : t.common.save}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>

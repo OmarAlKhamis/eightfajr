@@ -154,6 +154,7 @@ export const en = {
     previewTitle: "Next 7 alarms",
     previewFajr: "Fajr",
     previewAlarm: "Alarm",
+    unsaved: "Unsaved changes",
     saved: "Saved. Your next alarm is updated.",
     savedPending: "Saved. Connect your Eight Sleep account to activate it.",
     dangerTitle: "Disconnect",

@@ -155,6 +155,7 @@ export const ar: Dict = {
     previewTitle: "المنبّهات السبعة القادمة",
     previewFajr: "الفجر",
     previewAlarm: "المنبّه",
+    unsaved: "تغييرات غير محفوظة",
     saved: "تم الحفظ. المنبّه القادم تحدّث.",
     savedPending: "تم الحفظ. اربط حساب Eight Sleep لتفعيله.",
     dangerTitle: "فصل الحساب",
