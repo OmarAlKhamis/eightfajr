@@ -3,6 +3,14 @@
 Eight Fajr keeps **one** alarm on your Eight Sleep Pod synced to Fajr time in your city, every day, automatically.
 Free, bilingual (Arabic default / English), mobile-first. Not affiliated with Eight Sleep.
 
+## Use it (free, no install)
+
+**→ https://eightfajr.com**
+
+The hosted version is free for everyone with an Eight Sleep Pod: sign in with your email, connect your
+Eight Sleep account once, pick your city, done. No ads, no paid tier, no tracking beyond anonymous
+usage counts. You can also run your own copy; see *Local development* and *Deploy* below.
+
 > Eight Sleep has no public API. This project mirrors the private endpoints documented by the
 > open-source clients [steipete/eightctl](https://github.com/steipete/eightctl) and
 > [lukas-clarke/eight_sleep](https://github.com/lukas-clarke/eight_sleep). It can break whenever
