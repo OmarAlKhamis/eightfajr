@@ -47,6 +47,21 @@ passed through on PUT and server-computed ones (`*Timestamp`, `*Until`) are stri
 **Open:** DELETE and the PUT-vs-PATCH question are not verified against the live API yet; the probe
 script's `--create`/`--delete` flags exist for that.
 
+## 4c. Redirect ("Sign in with Eight Sleep") login: investigated, currently gated (2026-10-24)
+**Finding:** `https://auth-api.8slp.net/.well-known/oauth-authorization-server` advertises a full
+authorization-code + PKCE flow: hosted login at `/v1/ui/authorize`, `grant_types` authorization_code
++ refresh_token, scopes `read_sleep read_device write_device`, public clients (`none`), dynamic
+registration at `/v1/oauth/register`, and client-id metadata documents. No open-source client uses it.
+**Blocked:** registration answers `invalid_redirect_uri: these redirect_uris are not open to
+registration` for localhost, 127.0.0.1, our workers.dev URL and a custom scheme; the authorize page
+shows a generic error for the mobile app's client id and for a hosted metadata URL
+(`/oauth-client.json`, kept in `client/public/` so it is ready if Eight Sleep allowlists us).
+**Decision:** keep the password-grant connect (password in memory once, never stored) and ask Eight
+Sleep to allowlist our redirect URI (draft in `docs/launch/eightsleep-oauth-request.md`). If granted,
+`/api/connect/start` → their login page → `/api/connect/callback` replaces the password form; the rest
+of the app is unchanged because tokens are already refresh-token based.
+**Scope caveat:** the redirect flow offers no `write_sleep`; whether alarms need it is untested.
+
 ## 5. Alarm time zone: compute in city tz, push in account tz (2026-10-24)
 **Decision:** Fajr instant is computed for the chosen city's IANA zone; the alarm `time` string sent
 to Eight Sleep is that instant formatted in the Eight Sleep account's `timezone` (from `/users/me`).

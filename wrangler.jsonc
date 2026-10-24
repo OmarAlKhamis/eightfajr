@@ -32,6 +32,10 @@
   // production reads dashboard secrets (Workers → Settings → Variables).
   "vars": {
     "APP_NAME": "Fajr Alarm for Eight Sleep",
+    "APP_ORIGIN": "https://fajr-eight.omar-ab-kh.workers.dev",
+    "ADMIN_EMAIL": "omar.ab.kh@gmail.com",
+    "EIGHT_CLIENT_ID": "0894c7f33bb94800a03f1f4df13a4f38",
+    "EIGHT_MOCK": "0",
     "POSTHOG_HOST": "https://eu.i.posthog.com"
   },
 
