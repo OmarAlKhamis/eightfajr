@@ -45,6 +45,15 @@ export function registerMiscRoutes(app: Hono<AppEnv>) {
 
   app.get("/api/health", (c) => c.json({ ok: true, mock: isMock(c.env), at: nowIso() }));
 
+  // Public, non-secret runtime config for the SPA (PostHog project keys are public by design).
+  app.get("/api/config", (c) =>
+    c.json({
+      posthogKey: c.env.POSTHOG_KEY?.trim() || null,
+      posthogHost: c.env.POSTHOG_HOST ?? "https://eu.i.posthog.com",
+      mock: isMock(c.env),
+    }),
+  );
+
   // ---- dev-only helpers (mock mode): let the smoke test script the fake Pod ----
   app.use("/api/dev/*", async (c, next) => {
     if (!isMock(c.env)) return c.json({ error: "not_found" }, 404);

@@ -1,0 +1,11 @@
+{
+  "name": "Fajr Alarm for Eight Sleep",
+  "short_name": "Fajr Alarm",
+  "start_url": "/settings",
+  "display": "standalone",
+  "background_color": "#faf8f3",
+  "theme_color": "#1e2a3a",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

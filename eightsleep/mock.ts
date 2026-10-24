@@ -62,12 +62,9 @@ export class MockEightSleep implements EightSleepApi {
   /** Simulate the user deleting the alarm in the Eight Sleep app. */
   deleteAlarmExternally(userId: string, alarmId: string): boolean {
     const list = this.alarms.get(userId) ?? [];
-    const before = list.length;
-    this.alarms.set(
-      userId,
-      list.filter((a) => a.id !== alarmId),
-    );
-    return list.length !== before;
+    const remaining = list.filter((a) => a.id !== alarmId);
+    this.alarms.set(userId, remaining);
+    return remaining.length !== list.length;
   }
 
   /** Simulate token revocation (user changed password, etc.). */
