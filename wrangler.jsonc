@@ -1,0 +1,39 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fajr-eight",
+  "main": "server/index.ts",
+  "compatibility_date": "2025-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Static client build. API routes always reach the Worker; everything else
+  // is served as a single-page app.
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "fajr-eight",
+      // Production D1 id is filled in at deploy time (README → Deploy). Local dev ignores it.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Hourly sync: every user whose current alarm has passed gets the next
+  // Fajr + offset pushed to their Pod. Idempotent — reruns are harmless.
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
+
+  // Secrets are NOT here: local dev reads .dev.vars (copy .dev.vars.example);
+  // production reads dashboard secrets (Workers → Settings → Variables).
+  "vars": {
+    "APP_NAME": "Fajr Alarm for Eight Sleep",
+    "POSTHOG_HOST": "https://eu.i.posthog.com"
+  },
+
+  "observability": { "enabled": true }
+}

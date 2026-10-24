@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check-test-build-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run check
+
+      - name: Unit tests (Fajr, Eight Sleep client, crypto, sync engine)
+        run: npm test
+
+      - name: Production build (client + worker)
+        run: npm run build
+
+      - name: Dev vars (secrets live outside wrangler.jsonc)
+        run: cp .dev.vars.example .dev.vars
+
+      - name: Apply D1 migrations (local)
+        run: npm run db:migrate
+
+      - name: Boot dev server (workerd + local D1, mocked Eight Sleep)
+        run: |
+          npm run dev &
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/api/auth/me || true)
+            [ "$code" = "401" ] && exit 0
+            sleep 2
+          done
+          echo "server did not become ready" && exit 1
+
+      - name: Smoke test (sign in, connect, settings, sync twice, pause, disconnect)
+        run: npm run test:smoke

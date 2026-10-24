@@ -1,0 +1,51 @@
+{
+  "name": "fajr-eight",
+  "version": "0.1.0",
+  "description": "Keeps one Eight Sleep Pod alarm synced to Fajr time in your city, every day.",
+  "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "deploy": "npm run build && wrangler deploy -c dist/fajr_eight/wrangler.json",
+    "check": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:smoke": "node script/smoke-test.mjs",
+    "cities:build": "node script/build-cities.mjs",
+    "eight:probe": "node script/eight-probe.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "wrangler d1 migrations apply fajr-eight --local",
+    "db:migrate:prod": "wrangler d1 migrations apply fajr-eight --remote",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.60.5",
+    "adhan": "^4.4.4",
+    "drizzle-orm": "^0.39.3",
+    "hono": "^4.9.0",
+    "lucide-react": "^0.545.0",
+    "posthog-js": "^1.200.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "wouter": "^3.3.5",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.13.0",
+    "@cloudflare/workers-types": "^5.20260708.1",
+    "@tailwindcss/vite": "^4.1.14",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "drizzle-kit": "^0.31.4",
+    "tailwindcss": "^4.1.14",
+    "typescript": "5.6.3",
+    "vite": "^7.1.9",
+    "vitest": "^3.2.0",
+    "wrangler": "^4.40.0"
+  }
+}

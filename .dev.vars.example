@@ -1,0 +1,36 @@
+# Local dev / CI values for the Worker (copy to .dev.vars). Production values are
+# dashboard secrets. NEVER commit .dev.vars.
+
+# Signs the session cookie. Any long random string.
+SESSION_SECRET=dev-session-secret-change-me
+
+# AES-256-GCM key for Eight Sleep tokens at rest: base64 of 32 random bytes.
+# Generate a real one with:  node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+TOKEN_ENCRYPTION_KEY=ZGV2LWtleS1kZXYta2V5LWRldi1rZXktZGV2LWtleSE=
+
+# Eight Sleep public app OAuth client. The id is public; the secret is the one
+# embedded in the open-source clients (steipete/eightctl, lukas-clarke/eight_sleep).
+EIGHT_CLIENT_ID=0894c7f33bb94800a03f1f4df13a4f38
+EIGHT_CLIENT_SECRET=
+
+# 1 = use the in-memory fake Eight Sleep API (dev, CI, smoke test). 0/unset = real API.
+EIGHT_MOCK=1
+
+# Outbound email (Resend). Unset = magic links are printed to the dev console instead.
+RESEND_API_KEY=
+# Sender on a verified Resend domain. Unset = Resend test sender (delivers only to the account owner).
+EMAIL_FROM=
+
+# Only this account may open /admin.
+ADMIN_EMAIL=omar.ab.kh@gmail.com
+
+# PostHog (EU). Unset = analytics disabled.
+POSTHOG_KEY=
+# Salt for hashing user ids into analytics distinct_ids (any random string).
+ANALYTICS_SALT=dev-analytics-salt
+
+# Lets POST /api/sync/run trigger the hourly job manually (header: x-cron-secret).
+CRON_SECRET=dev-cron-secret
+
+# Public origin used in magic-link emails.
+APP_ORIGIN=http://localhost:5173
