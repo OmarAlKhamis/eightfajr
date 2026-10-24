@@ -73,8 +73,11 @@ Worker sees every request). Resend sending domain eightfajr.com (eu-west-1), sen
 deliverability (Resend's shared test sender landed in Gmail spam).
 **Caveat:** "Eight" is Eight Sleep's brand. The FAQ and footer state we are not affiliated; if Eight
 Sleep objects, the name can change without touching the code (strings + domain only).
-**Cleanup:** the first Worker/D1 pair `fajr-eight` is superseded; its one user + connection row were
-copied into the new D1, then the old pair can be deleted.
+**Cleanup:** the first Worker/D1 pair `fajr-eight` was superseded; its one user + connection row were
+copied into the new D1 and the old pair was deleted on 2026-10-24.
+**Observation (unconfirmed):** when production created a one-off alarm at 04:37 while a dev-created
+one-off at the same minute still existed, the older one vanished from the Pod without a delete call.
+Eight Sleep may merge one-off alarms by time; our sync does not rely on this.
 
 ## 4e. Alarm options: vibration pattern and smart alarm (2026-10-24)
 **Decision:** Expose Eight Sleep's vibration `pattern` (RISE = gradual, INTENSE) and the "smart"
