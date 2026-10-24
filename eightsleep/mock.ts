@@ -21,6 +21,7 @@ export interface MockOptions {
 
 export interface MockCallCounts {
   login: number;
+  refresh: number;
   getMe: number;
   listAlarms: number;
   createAlarm: number;
@@ -32,7 +33,8 @@ export class MockEightSleep implements EightSleepApi {
   readonly accounts = new Map<string, MockAccount>(); // by email (lower)
   readonly alarms = new Map<string, EightAlarm[]>(); // by userId
   readonly tokens = new Map<string, { userId: string; expiresAt: number }>();
-  readonly calls: MockCallCounts = { login: 0, getMe: 0, listAlarms: 0, createAlarm: 0, updateAlarm: 0, deleteAlarm: 0 };
+  readonly refreshTokens = new Map<string, string>(); // refresh token → userId
+  readonly calls: MockCallCounts = { login: 0, refresh: 0, getMe: 0, listAlarms: 0, createAlarm: 0, updateAlarm: 0, deleteAlarm: 0 };
   /** Errors to throw on the next matching call(s), FIFO. */
   private readonly failQueue: { op: keyof MockCallCounts | "any"; error: EightSleepError }[] = [];
   private seq = 0;
@@ -67,9 +69,24 @@ export class MockEightSleep implements EightSleepApi {
     return remaining.length !== list.length;
   }
 
-  /** Simulate token revocation (user changed password, etc.). */
+  /** Simulate access-token expiry only (refresh tokens stay valid). */
+  expireAccessTokens(): void {
+    this.tokens.clear();
+  }
+
+  /** Simulate full revocation (user changed password, etc.): access AND refresh tokens die. */
   revokeAllTokens(): void {
     this.tokens.clear();
+    this.refreshTokens.clear();
+  }
+
+  private issue(userId: string): EightSession {
+    const accessToken = `mock-token-${++this.seq}`;
+    const refreshToken = `mock-refresh-${++this.seq}`;
+    const expiresAt = this.now() + this.tokenTtl;
+    this.tokens.set(accessToken, { userId, expiresAt });
+    this.refreshTokens.set(refreshToken, userId);
+    return { accessToken, userId, expiresAt, refreshToken };
   }
 
   private maybeFail(op: keyof MockCallCounts): void {
@@ -101,17 +118,29 @@ export class MockEightSleep implements EightSleepApi {
     if (!acc || acc.password !== password) {
       throw new EightSleepError("INVALID_CREDENTIALS", "mock: bad credentials", { status: 401 });
     }
-    const accessToken = `mock-token-${++this.seq}`;
-    const expiresAt = this.now() + this.tokenTtl;
-    this.tokens.set(accessToken, { userId: acc.userId, expiresAt });
-    return { accessToken, userId: acc.userId, expiresAt };
+    return this.issue(acc.userId);
+  }
+
+  async refresh(session: EightSession): Promise<EightSession> {
+    this.calls.refresh++;
+    this.maybeFail("refresh");
+    const userId = session.refreshToken ? this.refreshTokens.get(session.refreshToken) : undefined;
+    if (!userId) throw new EightSleepError("AUTH_FAILED", "mock: refresh token invalid", { status: 400 });
+    return this.issue(userId); // rotated; the old refresh token keeps working, like the live API
   }
 
   async getMe(session: EightSession): Promise<EightUser> {
     this.calls.getMe++;
     this.maybeFail("getMe");
     const acc = this.check(session);
-    return { userId: acc.userId, timezone: acc.timezone, email: acc.email, firstName: "Demo" };
+    return {
+      userId: acc.userId,
+      timezone: acc.timezone,
+      deviceId: `mock-device-${acc.userId}`,
+      email: acc.email,
+      firstName: "Demo",
+      features: ["warming", "cooling", "vibration", "alarms"],
+    };
   }
 
   async listAlarms(session: EightSession): Promise<EightAlarm[]> {

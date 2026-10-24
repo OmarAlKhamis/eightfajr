@@ -22,14 +22,20 @@ providers for one job); cron-job.org (another account to manage); Next.js on Wor
 reserving commercial use. Strictly this is "source-available", not OSI open source.
 **Rejected:** MIT (allows commercial use); CC BY-NC (written for content, not code).
 
-## 4. Token storage: encrypted access token, no password (2026-10-24)
-**Decision:** Connect exchanges email+password for an access token in memory, stores only the token
-(AES-256-GCM, key in env) plus its expiry. Password never persisted or logged.
-**Why:** Eight Sleep's token endpoint is an OAuth password grant that returns `access_token`,
-`expires_in`, `userId`; neither reference client receives or uses a refresh token.
-**Open:** real token lifetime is unknown until measured with `script/eight-probe.mjs`. If tokens turn
-out short-lived, the options are (a) email the user to reconnect when it expires, or (b) store the
-password encrypted with explicit, visible consent. Decide after the real-data pass.
+## 4. Token storage: encrypted access + refresh tokens, never the password (2026-10-24, revised same day)
+**Decision:** Connect exchanges email+password for tokens in memory and stores the access token AND
+the refresh token, each AES-256-GCM encrypted (key in env), plus the access-token expiry. The sync
+renews with the refresh grant when under 2 h remain, and retries once after an unexpected 401.
+Password never persisted or logged.
+**Why:** The real-account probe (Omar's Pod) showed the token endpoint returns
+`{access_token, token_type, expires_in: 72000, refresh_token, userId, user_id, scope}`: 20-hour
+access tokens and a working `grant_type=refresh_token` that rotates the refresh token (the old one
+kept working too). Both reference clients ignore the refresh token and re-login with the password,
+which we refuse to store. The original plan's fallback options (reconnect email vs. encrypted
+password) are therefore unnecessary.
+**Also learned:** `/users/me` has no top-level timezone; the Pod's zone is `currentDevice.timeZone`
+(also `/devices/{id}.timezone`). Profile `features` lists `"alarms"`; `autopilotEnabled` is a
+separate flag and alarms still listed fine with it off.
 
 ## 4b. Alarm API host and payload (2026-10-24)
 **Decision:** Alarms go through `https://app-api.8slp.net` (`GET /v2/users/{id}/alarms`,

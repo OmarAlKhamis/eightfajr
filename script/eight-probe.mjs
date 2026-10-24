@@ -65,14 +65,27 @@ async function main() {
   console.log("  expires_in:", auth.expires_in, auth.expires_in ? `(≈ ${(auth.expires_in / 86400).toFixed(1)} days)` : "");
   console.log("  refresh_token present:", "refresh_token" in auth);
   const token = auth.access_token;
-  const userId = auth.userId;
+  const userId = auth.userId ?? auth.user_id;
   const A = { ...H, authorization: `Bearer ${token}` };
+
+  if (auth.refresh_token) {
+    const rr = await fetch("https://auth-api.8slp.net/v1/tokens", {
+      method: "POST",
+      headers: H,
+      body: JSON.stringify({ client_id: EIGHT_CLIENT_ID, client_secret: EIGHT_CLIENT_SECRET, grant_type: "refresh_token", refresh_token: auth.refresh_token }),
+    });
+    const rj = await rr.json().catch(() => ({}));
+    console.log(`\nrefresh grant: HTTP ${rr.status}`);
+    console.log("  keys:", Object.keys(rj).join(", "));
+    console.log("  expires_in:", rj.expires_in, "rotated refresh_token:", !!rj.refresh_token && rj.refresh_token !== auth.refresh_token);
+  }
 
   const me = await fetch("https://client-api.8slp.net/v1/users/me", { headers: A });
   const meJson = await me.json().catch(() => ({}));
   const user = meJson.user ?? meJson;
   console.log(`\n/users/me: HTTP ${me.status}`);
-  console.log("  timezone:", user.timezone ?? "(none)");
+  console.log("  currentDevice.timeZone:", user.currentDevice?.timeZone ?? "(none)", "| top-level timezone:", user.timezone ?? "(none)");
+  console.log("  features:", JSON.stringify(user.features), "autopilotEnabled:", user.autopilotEnabled);
   console.log("  keys:", Object.keys(user).join(", "));
 
   const list = await fetch(`https://app-api.8slp.net/v2/users/${userId}/alarms`, { headers: A });

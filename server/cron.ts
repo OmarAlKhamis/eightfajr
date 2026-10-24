@@ -1,7 +1,7 @@
 import type { EightErrorCode } from "@eightsleep/index";
 import { capture } from "./analytics";
 import { createDb, nowIso } from "./db";
-import { decryptString } from "./crypto";
+import { decryptString, encryptString } from "./crypto";
 import { getEightSleep, getQueue } from "./eight";
 import { sendNeedsAttention } from "./email";
 import type { Env } from "./env";
@@ -23,6 +23,7 @@ export function buildSyncDeps(env: Env, storage: Storage): SyncDeps {
     store: storage,
     eight: getEightSleep(env),
     decryptToken: (enc) => decryptString(env.TOKEN_ENCRYPTION_KEY, enc),
+    encryptToken: (plain) => encryptString(env.TOKEN_ENCRYPTION_KEY, plain),
     notifyNeedsAttention: async (userId: string, code: EightErrorCode) => {
       const user = await storage.getUser(userId);
       if (user) await sendNeedsAttention(env, user.email, user.locale, code);

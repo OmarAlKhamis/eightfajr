@@ -36,7 +36,10 @@ export const eightConnections = sqliteTable("eight_connections", {
   // IANA zone of the Eight Sleep profile — alarm `time` strings are wall-clock in it.
   eightTimezone: text("eight_timezone"),
   accessTokenEnc: text("access_token_enc").notNull(),
+  // Live API returns one (≈20 h access tokens); used to renew without the password.
+  refreshTokenEnc: text("refresh_token_enc"),
   tokenExpiresAt: text("token_expires_at"),
+  eightDeviceId: text("eight_device_id"),
   status: text("status", { enum: ["connected", "needs_reconnect", "no_subscription"] })
     .notNull()
     .default("connected"),

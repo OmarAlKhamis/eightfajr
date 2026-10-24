@@ -1,4 +1,13 @@
-import { codeOf, isSessionExpired, type EightAlarmInput, type EightErrorCode, type EightSession, type EightSleepApi } from "@eightsleep/index";
+import {
+  codeOf,
+  EightSleepError,
+  isEightSleepError,
+  isSessionExpired,
+  type EightAlarmInput,
+  type EightErrorCode,
+  type EightSession,
+  type EightSleepApi,
+} from "@eightsleep/index";
 import type { AlarmSettings, EightConnection, ManagedAlarm, SyncLogEntry } from "@shared/schema";
 import { formatTimeInTz, nextAlarmAfter, type FajrSettings } from "@shared/fajr";
 import { isMethodKey, offsetBucket } from "@shared/methods";
@@ -14,6 +23,7 @@ export interface SyncDeps {
   store: SyncStore;
   eight: EightSleepApi;
   decryptToken: (enc: string) => Promise<string>;
+  encryptToken: (plain: string) => Promise<string>;
   now?: () => number;
   /** Called once when a user needs to reconnect (3 failures, or a definitive auth/subscription error). */
   notifyNeedsAttention?: (userId: string, code: EightErrorCode) => Promise<void>;
@@ -48,8 +58,53 @@ function alarmInput(s: AlarmSettings, time: string, enabled: boolean): EightAlar
 
 async function sessionFor(deps: SyncDeps, conn: EightConnection): Promise<EightSession> {
   const accessToken = await deps.decryptToken(conn.accessTokenEnc);
+  const refreshToken = conn.refreshTokenEnc ? await deps.decryptToken(conn.refreshTokenEnc) : null;
   const expiresAt = conn.tokenExpiresAt ? Date.parse(conn.tokenExpiresAt) : Number.MAX_SAFE_INTEGER;
-  return { accessToken, userId: conn.eightUserId, expiresAt };
+  return { accessToken, userId: conn.eightUserId, expiresAt, refreshToken };
+}
+
+// Access tokens live ≈20 h and we run hourly, so renew whenever less than this remains.
+export const REFRESH_AHEAD_MS = 2 * 60 * 60_000;
+
+/** Decrypts the stored session and renews it with the refresh token when it is about to expire. */
+export async function ensureSession(deps: SyncDeps, conn: EightConnection, nowMs: number): Promise<EightSession> {
+  let session = await sessionFor(deps, conn);
+  if (isSessionExpired(session, nowMs, REFRESH_AHEAD_MS)) {
+    if (!session.refreshToken) {
+      throw new EightSleepError("AUTH_FAILED", "Access token expired and no refresh token stored");
+    }
+    session = await deps.eight.refresh(session); // throws AUTH_FAILED when the refresh token is dead
+    await persistSession(deps, conn.userId, session);
+  }
+  return session;
+}
+
+export async function persistSession(deps: SyncDeps, userId: string, session: EightSession): Promise<void> {
+  await deps.store.updateConnection(userId, {
+    accessTokenEnc: await deps.encryptToken(session.accessToken),
+    refreshTokenEnc: session.refreshToken ? await deps.encryptToken(session.refreshToken) : null,
+    tokenExpiresAt: new Date(session.expiresAt).toISOString(),
+  });
+}
+
+/**
+ * Runs an API call; on a 401 tries ONE refresh and retries, so a token revoked
+ * early still recovers without bothering the user when the refresh token works.
+ */
+async function withFreshSession<T>(
+  deps: SyncDeps,
+  conn: EightConnection,
+  session: EightSession,
+  fn: (s: EightSession) => Promise<T>,
+): Promise<{ result: T; session: EightSession }> {
+  try {
+    return { result: await fn(session), session };
+  } catch (e) {
+    if (!(isEightSleepError(e) && e.code === "AUTH_FAILED") || !session.refreshToken) throw e;
+    const renewed = await deps.eight.refresh(session);
+    await persistSession(deps, conn.userId, renewed);
+    return { result: await fn(renewed), session: renewed };
+  }
 }
 
 export async function syncUser(deps: SyncDeps, userId: string, opts: { force?: boolean; trigger: SyncTrigger }): Promise<SyncOutcome> {
@@ -79,20 +134,17 @@ export async function syncUser(deps: SyncDeps, userId: string, opts: { force?: b
   const managed = await deps.store.getManaged(userId);
 
   try {
-    const session = await sessionFor(deps, conn);
-    if (isSessionExpired(session, startedMs)) {
-      // Expired per the stored expiry: don't even try, ask the user to reconnect.
-      throw Object.assign(new Error("token expired"), { code: "AUTH_FAILED" as const, isExpiry: true });
-    }
+    // Renews with the refresh token when needed; throws AUTH_FAILED when it can't.
+    const session = await ensureSession(deps, conn, startedMs);
 
     // ---- paused: make sure the Pod alarm is off, once --------------------
     if (settings.paused) {
       if (managed && managed.pushedEnabled) {
-        const alarms = await deps.eight.listAlarms(session);
-        const existing = alarms.find((a) => a.id === managed.eightAlarmId);
-        if (existing && existing.enabled) {
-          await deps.eight.updateAlarm(session, existing, { enabled: false });
-        }
+        await withFreshSession(deps, conn, session, async (s) => {
+          const alarms = await deps.eight.listAlarms(s);
+          const existing = alarms.find((a) => a.id === managed.eightAlarmId);
+          if (existing && existing.enabled) await deps.eight.updateAlarm(s, existing, { enabled: false });
+        });
         await deps.store.upsertManaged({ ...managed, pushedEnabled: false, lastPushedAt: startedAt });
       }
       await markHealthy(deps, conn);
@@ -117,29 +169,25 @@ export async function syncUser(deps: SyncDeps, userId: string, opts: { force?: b
     }
 
     const input = alarmInput(settings, scheduledLocal, true);
-    let result: SyncResult;
-    let alarmId: string;
-    let recreatedCount = managed?.recreatedCount ?? 0;
+    const recreatedBefore = managed?.recreatedCount ?? 0;
 
-    if (managed) {
-      const alarms = await deps.eight.listAlarms(session);
-      const existing = alarms.find((a) => a.id === managed.eightAlarmId);
-      if (existing) {
-        await deps.eight.updateAlarm(session, existing, input);
-        result = "updated";
-        alarmId = existing.id;
-      } else {
+    const { result: pushed } = await withFreshSession(deps, conn, session, async (s): Promise<{ result: SyncResult; alarmId: string }> => {
+      if (managed) {
+        const alarms = await deps.eight.listAlarms(s);
+        const existing = alarms.find((a) => a.id === managed.eightAlarmId);
+        if (existing) {
+          await deps.eight.updateAlarm(s, existing, input);
+          return { result: "updated", alarmId: existing.id };
+        }
         // Deleted in the Eight Sleep app: recreate exactly once and remember the new id.
-        const created = await deps.eight.createAlarm(session, input);
-        result = "recreated";
-        alarmId = created.id;
-        recreatedCount += 1;
+        const created = await deps.eight.createAlarm(s, input);
+        return { result: "recreated", alarmId: created.id };
       }
-    } else {
-      const created = await deps.eight.createAlarm(session, input);
-      result = "created";
-      alarmId = created.id;
-    }
+      const created = await deps.eight.createAlarm(s, input);
+      return { result: "created", alarmId: created.id };
+    });
+    const { result, alarmId } = pushed;
+    const recreatedCount = result === "recreated" ? recreatedBefore + 1 : recreatedBefore;
 
     await deps.store.upsertManaged({
       userId,
@@ -160,7 +208,7 @@ export async function syncUser(deps: SyncDeps, userId: string, opts: { force?: b
     });
     return log({ result, scheduledForUtc, scheduledLocal });
   } catch (e) {
-    const code = codeOf(e) === "UNKNOWN" && (e as { code?: EightErrorCode })?.code ? (e as { code: EightErrorCode }).code : codeOf(e);
+    const code = codeOf(e);
     const message = e instanceof Error ? e.message : String(e);
     const failures = conn.consecutiveFailures + 1;
     const definitive = code === "AUTH_FAILED" || code === "NO_SUBSCRIPTION" || code === "INVALID_CREDENTIALS";
@@ -200,8 +248,8 @@ export async function removeManagedAlarm(deps: SyncDeps, userId: string): Promis
   const managed = await deps.store.getManaged(userId);
   if (!conn || !managed) return false;
   try {
-    const session = await sessionFor(deps, conn);
-    await deps.eight.deleteAlarm(session, managed.eightAlarmId);
+    const session = await ensureSession(deps, conn, (deps.now ?? Date.now)());
+    await withFreshSession(deps, conn, session, (s) => deps.eight.deleteAlarm(s, managed.eightAlarmId));
     return true;
   } catch {
     return false;

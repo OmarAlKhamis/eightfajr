@@ -46,7 +46,7 @@ export const en = {
       },
       {
         q: "What do you store?",
-        a: "Your email, your city, your preferences, the ID of the one alarm we manage, a log of each sync, and an encrypted Eight Sleep access token (AES-256-GCM, key kept outside the database). Your Eight Sleep password is used once in memory to get that token and is never written anywhere, not even to logs.",
+        a: "Your email, your city, your preferences, the ID of the one alarm we manage, a log of each sync, and encrypted Eight Sleep access and refresh tokens (AES-256-GCM, key kept outside the database). Your Eight Sleep password is used once in memory to get those tokens and is never written anywhere, not even to logs.",
       },
       {
         q: "Do I need an Eight Sleep subscription?",
@@ -178,7 +178,7 @@ export const en = {
     updated: "Last updated: 24 October 2026",
     sections: [
       { h: "What this is", p: "A free, source-available tool that keeps one alarm on your Eight Sleep Pod synced to Fajr time. It is not affiliated with Eight Sleep. It uses Eight Sleep's private API, which may change at any time." },
-      { h: "What we store", p: "Your email address (to sign you in). Your chosen city, calculation method, offset and alarm options. The ID of the single alarm we manage and the time we last set it. A log of each sync attempt (time, result, error code). An Eight Sleep access token encrypted with AES-256-GCM; the key lives in the server's secret store, not in the database. Optional feedback you type." },
+      { h: "What we store", p: "Your email address (to sign you in). Your chosen city, calculation method, offset and alarm options. The ID of the single alarm we manage and the time we last set it. A log of each sync attempt (time, result, error code). Eight Sleep access and refresh tokens encrypted with AES-256-GCM; the key lives in the server's secret store, not in the database. Optional feedback you type." },
       { h: "What we never store", p: "Your Eight Sleep password. It is sent once, in memory, to Eight Sleep's token endpoint and then discarded. It is never logged. We do not read your sleep data, temperatures or any other alarm." },
       { h: "Analytics", p: "We use PostHog (EU servers) with no personal data: a salted hash instead of your identity, and only coarse properties such as country, calculation method and offset bucket. No session recording, no autocapture, no advertising." },
       { h: "Email", p: "Sign-in links and, at most once per incident, a notice when your alarm stopped syncing and needs you to reconnect. Sent via Resend." },

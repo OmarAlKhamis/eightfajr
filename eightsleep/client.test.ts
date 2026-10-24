@@ -29,11 +29,22 @@ function fakeFetch(handler: (call: Call) => { status: number; body?: unknown; he
 }
 
 const noSleep = { sleep: async () => {}, random: () => 0.5 };
-const session: EightSession = { accessToken: "tok", userId: "u1", expiresAt: Date.now() + 3600_000 };
+const session: EightSession = { accessToken: "tok", userId: "u1", expiresAt: Date.now() + 3600_000, refreshToken: "rt-1" };
+
+// Shape observed live on 2026-10-24.
+const LIVE_TOKEN_RESPONSE = {
+  access_token: "abc",
+  token_type: "bearer",
+  expires_in: 72000,
+  refresh_token: "rt-live",
+  userId: "u1",
+  user_id: "u1",
+  scope: "read_sleep write_sleep read_device write_device",
+};
 
 describe("createEightSleepClient", () => {
-  it("logs in with the password grant, JSON body and okhttp user-agent, and never keeps the password", async () => {
-    const { fetch, calls } = fakeFetch(() => ({ status: 200, body: { access_token: "abc", expires_in: 7200, userId: "u1" } }));
+  it("logs in with the password grant, JSON body and okhttp user-agent, keeps the refresh token, never the password", async () => {
+    const { fetch, calls } = fakeFetch(() => ({ status: 200, body: LIVE_TOKEN_RESPONSE }));
     const api = createEightSleepClient({ clientId: "cid", clientSecret: "sec", fetch, retry: noSleep });
     const before = Date.now();
     const s = await api.login("me@example.com", "pw");
@@ -44,8 +55,25 @@ describe("createEightSleepClient", () => {
     expect(calls[0]!.headers["content-type"]).toMatch(/application\/json/);
     expect(s.accessToken).toBe("abc");
     expect(s.userId).toBe("u1");
-    expect(s.expiresAt).toBeGreaterThanOrEqual(before + 7200_000);
+    expect(s.refreshToken).toBe("rt-live");
+    expect(s.expiresAt).toBeGreaterThanOrEqual(before + 72000_000);
     expect(JSON.stringify(s)).not.toContain("pw");
+  });
+
+  it("refreshes with the refresh_token grant and keeps userId when the response omits it", async () => {
+    const { fetch, calls } = fakeFetch(() => ({ status: 200, body: { access_token: "new", token_type: "bearer", expires_in: 72000, refresh_token: "rt-2", scope: "x" } }));
+    const api = createEightSleepClient({ clientId: "cid", clientSecret: "sec", fetch, retry: noSleep });
+    const s = await api.refresh(session);
+    expect(calls[0]!.url).toBe(AUTH_URL);
+    expect(calls[0]!.body).toEqual({ client_id: "cid", client_secret: "sec", grant_type: "refresh_token", refresh_token: "rt-1" });
+    expect(s).toMatchObject({ accessToken: "new", userId: "u1", refreshToken: "rt-2" });
+  });
+
+  it("maps a rejected refresh token to AUTH_FAILED and refuses to refresh without one", async () => {
+    const { fetch } = fakeFetch(() => ({ status: 400, body: { error: "invalid_grant" } }));
+    const api = createEightSleepClient({ clientId: "cid", clientSecret: "sec", fetch, retry: noSleep });
+    await expect(api.refresh(session)).rejects.toMatchObject({ code: "AUTH_FAILED" });
+    await expect(api.refresh({ ...session, refreshToken: null })).rejects.toMatchObject({ code: "AUTH_FAILED" });
   });
 
   it("maps a rejected login to INVALID_CREDENTIALS without retrying", async () => {
@@ -55,13 +83,31 @@ describe("createEightSleepClient", () => {
     expect(calls).toHaveLength(1);
   });
 
-  it("sends the bearer token and reads timezone from /users/me", async () => {
-    const { fetch, calls } = fakeFetch(() => ({ status: 200, body: { user: { userId: "u1", timezone: "Asia/Riyadh", email: "x@y.z" } } }));
+  it("sends the bearer token and reads the Pod time zone from currentDevice.timeZone (live shape)", async () => {
+    const { fetch, calls } = fakeFetch(() => ({
+      status: 200,
+      body: {
+        user: {
+          userId: "u1",
+          email: "x@y.z",
+          features: ["warming", "cooling", "vibration", "buttonControls", "alarms"],
+          currentDevice: { id: "dev-1", side: "right", timeZone: "Asia/Riyadh", specialization: "pod" },
+          devices: ["dev-1"],
+        },
+      },
+    }));
     const api = createEightSleepClient({ clientId: "c", clientSecret: "s", fetch, retry: noSleep });
     const me = await api.getMe(session);
     expect(calls[0]!.url).toBe(`${CLIENT_API_URL}/users/me`);
     expect(calls[0]!.headers.authorization).toBe("Bearer tok");
-    expect(me).toMatchObject({ userId: "u1", timezone: "Asia/Riyadh" });
+    expect(me).toMatchObject({ userId: "u1", timezone: "Asia/Riyadh", deviceId: "dev-1" });
+    expect(me.features).toContain("alarms");
+  });
+
+  it("tolerates a profile without a device (no time zone)", async () => {
+    const { fetch } = fakeFetch(() => ({ status: 200, body: { user: { userId: "u1" } } }));
+    const api = createEightSleepClient({ clientId: "c", clientSecret: "s", fetch, retry: noSleep });
+    expect(await api.getMe(session)).toMatchObject({ timezone: null, deviceId: null, features: [] });
   });
 
   it("lists alarms from v2 and creates one-off alarms on v1 with pyEight's payload", async () => {
@@ -89,6 +135,7 @@ describe("createEightSleepClient", () => {
       enabled: true,
       vibration: { enabled: true, powerLevel: 50, pattern: "RISE" },
       thermal: { enabled: true, level: 0 },
+      smart: { lightSleepEnabled: false, sleepCapEnabled: false },
     });
     expect(created.id).toBe("a2");
   });
@@ -242,8 +289,13 @@ describe("MockEightSleep", () => {
     await expect(mock.listAlarms(s)).resolves.toHaveLength(1);
     mock.deleteAlarmExternally(s.userId, a.id);
     await expect(mock.updateAlarm(s, a, { time: "04:32:00" })).rejects.toMatchObject({ code: "NOT_FOUND" });
-    mock.revokeAllTokens();
+    mock.expireAccessTokens();
     await expect(mock.listAlarms(s)).rejects.toMatchObject({ code: "AUTH_FAILED" });
+    const renewed = await mock.refresh(s); // refresh token survives access-token expiry
+    expect(renewed.refreshToken).not.toBe(s.refreshToken);
+    await expect(mock.listAlarms(renewed)).resolves.toHaveLength(0);
+    mock.revokeAllTokens();
+    await expect(mock.refresh(renewed)).rejects.toMatchObject({ code: "AUTH_FAILED" });
     await expect(mock.login("demo@example.com", "wrong")).rejects.toMatchObject({ code: "INVALID_CREDENTIALS" });
     expect(mock.calls.createAlarm).toBe(1);
     vi.restoreAllMocks();

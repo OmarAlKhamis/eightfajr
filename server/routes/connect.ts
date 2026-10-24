@@ -33,7 +33,9 @@ export function registerConnectRoutes(app: Hono<AppEnv>) {
         eightUserId: me.userId || session.userId,
         eightTimezone: tz,
         accessTokenEnc: await encryptString(c.env.TOKEN_ENCRYPTION_KEY, session.accessToken),
+        refreshTokenEnc: session.refreshToken ? await encryptString(c.env.TOKEN_ENCRYPTION_KEY, session.refreshToken) : null,
         tokenExpiresAt: nowIso(session.expiresAt),
+        eightDeviceId: me.deviceId,
         status: "connected",
         consecutiveFailures: 0,
         attentionEmailSentAt: null,
@@ -44,7 +46,14 @@ export function registerConnectRoutes(app: Hono<AppEnv>) {
       // Switching Eight Sleep accounts orphans the old alarm id.
       if (existing && existing.eightUserId !== (me.userId || session.userId)) await storage.deleteManaged(user.id);
 
-      c.executionCtx.waitUntil(capture(c.env, "eight_sleep_connected", user.id, { reconnect: !!existing, has_timezone: !!tz }));
+      c.executionCtx.waitUntil(
+        capture(c.env, "eight_sleep_connected", user.id, {
+          reconnect: !!existing,
+          has_timezone: !!tz,
+          has_refresh_token: !!session.refreshToken,
+          has_alarms_feature: me.features.includes("alarms"),
+        }),
+      );
 
       let sync = null;
       if (await storage.getSettings(user.id)) {

@@ -124,25 +124,50 @@ export function createEightSleepClient(opts: ClientOptions): EightSleepApi {
         throw errorFromStatus(res.status, snippet(res.text), res.retryAfterMs);
       }, opts.retry);
 
-      const j = (r.json ?? {}) as Json;
-      const accessToken = typeof j.access_token === "string" ? j.access_token : "";
-      const userId = typeof j.userId === "string" ? j.userId : "";
-      const expiresIn = typeof j.expires_in === "number" && j.expires_in > 0 ? j.expires_in : 3600;
-      if (!accessToken || !userId) {
-        throw new EightSleepError("UNEXPECTED_RESPONSE", "Eight Sleep login response missing access_token/userId");
+      return parseTokenResponse((r.json ?? {}) as Json, null);
+    },
+
+    async refresh(session) {
+      if (!session.refreshToken) {
+        throw new EightSleepError("AUTH_FAILED", "No refresh token stored; the user must reconnect");
       }
-      return { accessToken, userId, expiresAt: Date.now() + expiresIn * 1000 };
+      const r = await withRetry(async () => {
+        const res = await request(
+          "POST",
+          AUTH_URL,
+          {
+            client_id: opts.clientId,
+            client_secret: opts.clientSecret,
+            grant_type: "refresh_token",
+            refresh_token: session.refreshToken,
+          },
+          {},
+        );
+        if (res.status >= 200 && res.status < 300) return res;
+        if (res.status === 400 || res.status === 401 || res.status === 403) {
+          throw new EightSleepError("AUTH_FAILED", "Eight Sleep rejected the refresh token", { status: res.status });
+        }
+        throw errorFromStatus(res.status, snippet(res.text), res.retryAfterMs);
+      }, opts.retry);
+      // The refresh response carries no userId; keep the one we have.
+      return parseTokenResponse((r.json ?? {}) as Json, session);
     },
 
     async getMe(session) {
       const j = (await authed(session, "GET", `${CLIENT_API_URL}/users/me`)) as Json | null;
       const u = ((j?.user as Json | undefined) ?? j ?? {}) as Json;
       const userId = typeof u.userId === "string" ? u.userId : typeof u.id === "string" ? u.id : session.userId;
+      const device = (u.currentDevice as Json | undefined) ?? {};
+      const tzCandidates = [device.timeZone, device.timezone, u.timezone, u.timeZone];
+      const timezone = tzCandidates.find((v): v is string => typeof v === "string" && v.length > 0) ?? null;
+      const devices = Array.isArray(u.devices) ? u.devices.filter((d): d is string => typeof d === "string") : [];
       return {
         userId,
-        timezone: typeof u.timezone === "string" && u.timezone ? u.timezone : null,
+        timezone,
+        deviceId: typeof device.id === "string" ? device.id : (devices[0] ?? null),
         email: typeof u.email === "string" ? u.email : null,
         firstName: typeof u.firstName === "string" ? u.firstName : null,
+        features: Array.isArray(u.features) ? u.features.filter((f): f is string => typeof f === "string") : [],
       } satisfies EightUser;
     },
 
@@ -161,6 +186,9 @@ export function createEightSleepClient(opts: ClientOptions): EightSleepApi {
         enabled: input.enabled,
         vibration: { enabled: input.vibrationEnabled, powerLevel: input.vibrationPower, pattern: "RISE" },
         thermal: { enabled: input.thermalEnabled, level: input.thermalLevel },
+        // Eight Sleep's default "smart" alarm may ring up to 30 min early during light
+        // sleep. A Fajr alarm must ring at the time we computed, so it is off for ours.
+        smart: { lightSleepEnabled: false, sleepCapEnabled: false },
       };
       const j = (await authed(session, "POST", `${APP_API_URL}/v1/users/${session.userId}/alarms`, body)) as Json | null;
       const created = unwrapAlarm(j);
@@ -210,6 +238,21 @@ export function createEightSleepClient(opts: ClientOptions): EightSleepApi {
       }
     },
   };
+}
+
+/**
+ * Live token response (2026-10-24): { access_token, token_type, expires_in: 72000,
+ * refresh_token, userId, user_id, scope }. The refresh grant returns the same minus userId.
+ */
+function parseTokenResponse(j: Json, previous: EightSession | null): EightSession {
+  const accessToken = typeof j.access_token === "string" ? j.access_token : "";
+  const userId = typeof j.userId === "string" ? j.userId : typeof j.user_id === "string" ? j.user_id : (previous?.userId ?? "");
+  const expiresIn = typeof j.expires_in === "number" && j.expires_in > 0 ? j.expires_in : 3600;
+  const refreshToken = typeof j.refresh_token === "string" && j.refresh_token ? j.refresh_token : (previous?.refreshToken ?? null);
+  if (!accessToken || !userId) {
+    throw new EightSleepError("UNEXPECTED_RESPONSE", "Eight Sleep token response missing access_token/userId");
+  }
+  return { accessToken, userId, expiresAt: Date.now() + expiresIn * 1000, refreshToken };
 }
 
 function unwrapAlarm(j: Json | null): EightAlarm | null {

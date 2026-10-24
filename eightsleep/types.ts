@@ -6,16 +6,27 @@
 export interface EightSession {
   accessToken: string;
   userId: string;
-  /** Epoch ms when the token stops working (from `expires_in`). */
+  /** Epoch ms when the access token stops working (from `expires_in`; live value 72000 s ≈ 20 h). */
   expiresAt: number;
+  /**
+   * Returned by the live token endpoint (verified 2026-10-24) although the reference
+   * clients ignore it. Lets us renew without ever touching the password again.
+   */
+  refreshToken: string | null;
 }
 
 export interface EightUser {
   userId: string;
-  /** IANA zone of the profile, e.g. "Asia/Riyadh". May be missing on some accounts. */
+  /**
+   * IANA zone the Pod runs on, e.g. "Asia/Riyadh". Live `/users/me` has no top-level
+   * timezone; it lives in `currentDevice.timeZone` (and `/devices/{id}.timezone`).
+   */
   timezone: string | null;
+  deviceId: string | null;
   email: string | null;
   firstName: string | null;
+  /** Feature flags from the profile, e.g. ["warming","cooling","vibration","alarms"]. */
+  features: string[];
 }
 
 export type VibrationPattern = "RISE" | "intense" | string;
@@ -80,6 +91,8 @@ export interface EightAlarmInput {
 export interface EightSleepApi {
   /** Password grant. The password is used for this call only and never retained. */
   login(email: string, password: string): Promise<EightSession>;
+  /** Refresh grant. Returns a new session (new access token, usually a rotated refresh token). */
+  refresh(session: EightSession): Promise<EightSession>;
   getMe(session: EightSession): Promise<EightUser>;
   listAlarms(session: EightSession): Promise<EightAlarm[]>;
   createAlarm(session: EightSession, input: EightAlarmInput): Promise<EightAlarm>;

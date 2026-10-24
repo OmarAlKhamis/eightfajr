@@ -74,7 +74,9 @@ async function setup(opts: { eightTimezone?: string | null; settings?: Partial<A
     eightUserId: session.userId,
     eightTimezone: opts.eightTimezone === undefined ? "Asia/Riyadh" : opts.eightTimezone,
     accessTokenEnc: `enc:${session.accessToken}`,
+    refreshTokenEnc: session.refreshToken ? `enc:${session.refreshToken}` : null,
     tokenExpiresAt: new Date(session.expiresAt).toISOString(),
+    eightDeviceId: "mock-device-mock-user-1",
     status: "connected",
     consecutiveFailures: 0,
     attentionEmailSentAt: null,
@@ -90,6 +92,7 @@ async function setup(opts: { eightTimezone?: string | null; settings?: Partial<A
     store,
     eight: mock,
     decryptToken: async (enc) => enc.replace(/^enc:/, ""),
+    encryptToken: async (plain) => `enc:${plain}`,
     now: () => nowMs,
     notifyNeedsAttention: async (_u, code) => void notified.push(code),
     analytics: async (event) => void events.push(event),
@@ -220,7 +223,38 @@ describe("syncUser — failures", () => {
     expect(store.connections.get(USER)!.attentionEmailSentAt).toBeNull();
   });
 
-  it("401 → needs_reconnect immediately, notified once, and the cron skips the user afterwards", async () => {
+  it("renews a nearly-expired access token with the refresh token before syncing, and persists the new tokens", async () => {
+    const { mock, deps, store } = await setup();
+    const soon = new Date((deps.now?.() ?? Date.now()) + 30 * 60_000).toISOString(); // 30 min left (< 2 h)
+    store.connections.set(USER, { ...store.connections.get(USER)!, tokenExpiresAt: soon });
+    const out = await syncUser(deps, USER, { trigger: "cron" });
+    expect(out.result).toBe("created");
+    expect(mock.calls.refresh).toBe(1);
+    const conn = store.connections.get(USER)!;
+    expect(conn.accessTokenEnc).not.toBe("enc:mock-token-1");
+    expect(conn.refreshTokenEnc).toMatch(/^enc:mock-refresh-/);
+    expect(Date.parse(conn.tokenExpiresAt!)).toBeGreaterThan(Date.parse(soon));
+  });
+
+  it("recovers from an unexpected 401 by refreshing once and retrying", async () => {
+    const { mock, deps, store } = await setup();
+    mock.expireAccessTokens(); // stored expiry still looks fine, but the server says 401
+    const out = await syncUser(deps, USER, { trigger: "cron" });
+    expect(out.result).toBe("created");
+    expect(mock.calls.refresh).toBe(1);
+    expect(store.connections.get(USER)!.status).toBe("connected");
+  });
+
+  it("expired token and no refresh token → AUTH_FAILED without calling the API", async () => {
+    const { mock, deps, store } = await setup();
+    store.connections.set(USER, { ...store.connections.get(USER)!, tokenExpiresAt: "2020-01-01T00:00:00.000Z", refreshTokenEnc: null });
+    const out = await syncUser(deps, USER, { trigger: "cron" });
+    expect(out.errorCode).toBe("AUTH_FAILED");
+    expect(mock.calls.listAlarms + mock.calls.createAlarm + mock.calls.refresh).toBe(0);
+    expect(store.connections.get(USER)!.status).toBe("needs_reconnect");
+  });
+
+  it("revoked refresh token (password change) → needs_reconnect immediately, notified once, cron skips the user afterwards", async () => {
     const { mock, deps, store, notified } = await setup();
     mock.revokeAllTokens();
     const out = await syncUser(deps, USER, { trigger: "cron" });
@@ -239,12 +273,12 @@ describe("syncUser — failures", () => {
     expect(store.connections.get(USER)!.status).toBe("no_subscription");
   });
 
-  it("a token past its stored expiry is not even tried", async () => {
+  it("a token past its stored expiry is refreshed first, not tried as-is", async () => {
     const { mock, deps, store } = await setup();
     store.connections.set(USER, { ...store.connections.get(USER)!, tokenExpiresAt: "2020-01-01T00:00:00.000Z" });
     const out = await syncUser(deps, USER, { trigger: "cron" });
-    expect(out.errorCode).toBe("AUTH_FAILED");
-    expect(mock.calls.listAlarms + mock.calls.createAlarm).toBe(0);
+    expect(out.result).toBe("created");
+    expect(mock.calls.refresh).toBe(1);
   });
 
   it("emits analytics without PII", async () => {
